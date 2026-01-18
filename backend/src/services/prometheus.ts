@@ -25,7 +25,9 @@ export async function query(promql: string): Promise<PrometheusQueryResult> {
         const url = new URL('/api/v1/query', config.prometheus.url);
         url.searchParams.set('query', promql);
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: config.prometheus.headers
+        });
         const data = await response.json();
 
         return data as PrometheusQueryResult;
@@ -54,7 +56,9 @@ export async function queryRange(
         url.searchParams.set('end', end);
         url.searchParams.set('step', step);
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: config.prometheus.headers
+        });
         const data = await response.json();
 
         return data as PrometheusQueryResult;
@@ -74,7 +78,9 @@ export async function getMetrics(): Promise<string[]> {
     try {
         const url = new URL('/api/v1/label/__name__/values', config.prometheus.url);
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: config.prometheus.headers
+        });
         const data = await response.json() as { status: string; data?: string[] };
 
         if (data.status === 'success' && data.data) {
@@ -94,7 +100,9 @@ export async function getLabelValues(labelName: string): Promise<string[]> {
     try {
         const url = new URL(`/api/v1/label/${labelName}/values`, config.prometheus.url);
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: config.prometheus.headers
+        });
         const data = await response.json() as { status: string; data?: string[] };
 
         if (data.status === 'success' && data.data) {
@@ -113,7 +121,9 @@ export async function getLabelValues(labelName: string): Promise<string[]> {
 export async function checkHealth(): Promise<boolean> {
     try {
         const url = new URL('/-/healthy', config.prometheus.url);
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: config.prometheus.headers
+        });
         return response.ok;
     } catch (error) {
         return false;

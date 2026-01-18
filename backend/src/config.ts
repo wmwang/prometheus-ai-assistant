@@ -12,11 +12,28 @@ export const config = {
     // Prometheus 設定
     prometheus: {
         url: process.env.PROMETHEUS_URL || 'http://localhost:9090',
+        headers: (() => {
+            // Priority 1: Custom Headers JSON
+            if (process.env.PROMETHEUS_HEADERS) {
+                try {
+                    return JSON.parse(process.env.PROMETHEUS_HEADERS);
+                } catch (e) {
+                    console.warn('⚠️ PROMETHEUS_HEADERS format error, using default');
+                }
+            }
+            // Priority 2: Basic Auth
+            if (process.env.PROMETHEUS_USERNAME && process.env.PROMETHEUS_PASSWORD) {
+                const token = Buffer.from(`${process.env.PROMETHEUS_USERNAME}:${process.env.PROMETHEUS_PASSWORD}`).toString('base64');
+                return { 'Authorization': `Basic ${token}` };
+            }
+            return {};
+        })(),
     },
 
     // Elasticsearch 設定（選用）
     elasticsearch: {
-        url: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+        // 若環境變數未設定，則視為未啟用 (空字串)
+        url: process.env.ELASTICSEARCH_URL || '',
         auth: {
             username: process.env.ELASTICSEARCH_USERNAME,
             password: process.env.ELASTICSEARCH_PASSWORD,

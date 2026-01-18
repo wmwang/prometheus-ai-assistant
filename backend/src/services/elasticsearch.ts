@@ -14,6 +14,10 @@ let esClient: Client | null = null;
  * 如果尚未初始化，則建立新連線
  */
 export function getElasticsearchClient(): Client {
+    if (!config.elasticsearch.url) {
+        throw new Error('Elasticsearch URL 未設定');
+    }
+
     if (!esClient) {
         const auth: any = {};
 
@@ -44,12 +48,15 @@ export function getElasticsearchClient(): Client {
  * 檢查 Elasticsearch 連線狀態
  */
 export async function checkElasticsearchHealth(): Promise<boolean> {
+    if (!config.elasticsearch.url) {
+        return false;
+    }
     try {
         const client = getElasticsearchClient();
         const health = await client.cluster.health();
         return health.status === 'green' || health.status === 'yellow';
     } catch (error) {
-        console.error('Elasticsearch 健康檢查失敗:', error);
+        // 靜默失敗，避免刷屏
         return false;
     }
 }

@@ -29,19 +29,25 @@ const proxyOptions: any = {
     target: config.prometheus.url,
     changeOrigin: true,
     ws: true, // 支援 WebSocket
-    // 自動注入認證 Headers
-    onProxyReq: (proxyReq: any, req: any, res: any) => {
-        // console.log(`[Proxy] Forwarding request: ${req.method} ${req.url} -> ${config.prometheus.url}`);
-        if (config.prometheus.headers) {
-            Object.entries(config.prometheus.headers).forEach(([key, value]) => {
-                proxyReq.setHeader(key, value as string);
-            });
+    // http-proxy-middleware v3.x 事件處理寫法
+    on: {
+        // 自動注入認證 Headers
+        proxyReq: (proxyReq: any, req: any, res: any) => {
+            // [Debug] 顯示正在轉發的請求
+            console.log(`[Proxy] Forwarding ${req.method} ${req.url} -> ${config.prometheus.url}`);
+
+            if (config.prometheus.headers) {
+                console.log('[Proxy] Injecting Headers:', JSON.stringify(config.prometheus.headers));
+                Object.entries(config.prometheus.headers).forEach(([key, value]) => {
+                    proxyReq.setHeader(key, value as string);
+                });
+            }
+        },
+        // 錯誤處理
+        error: (err: any, req: any, res: any) => {
+            console.error('Proxy Error:', err);
+            res.status(500).send('Prometheus Proxy Error');
         }
-    },
-    // 錯誤處理
-    onError: (err: any, req: any, res: any) => {
-        console.error('Proxy Error:', err);
-        res.status(500).send('Prometheus Proxy Error');
     }
 };
 
@@ -152,6 +158,7 @@ app.listen(config.server.port, () => {
 📊 Prometheus: ${config.prometheus.url}
 📋 Elasticsearch: ${config.elasticsearch.url}
 🤖 OpenAI: ${config.openai.apiKey ? '已設定' : '❌ 未設定'}
+🔑 Headers: ${config.prometheus.headers ? JSON.stringify(config.prometheus.headers) : '無'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 API 端點:

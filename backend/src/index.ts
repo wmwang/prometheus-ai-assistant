@@ -9,6 +9,7 @@ import templatesRouter from './routes/templates.js';
 import alertsRouter from './routes/alerts.js';
 import diagnosisRouter from './routes/diagnosis.js';
 import elasticsearchRouter from './routes/elasticsearch.js';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import * as prometheus from './services/prometheus.js';
 import * as elasticsearch from './services/elasticsearch.js';
 
@@ -66,6 +67,33 @@ app.get('/api/metrics', async (_req, res) => {
         });
     }
 });
+
+// Prometheus 反向代理 (解決 iframe 認證問題)
+// ==========================================
+const proxyOptions: any = {
+    target: config.prometheus.url,
+    changeOrigin: true,
+    ws: true, // 支援 WebSocket
+    // 自動注入認證 Headers
+    onProxyReq: (proxyReq: any, req: any, res: any) => {
+        if (config.prometheus.headers) {
+            Object.entries(config.prometheus.headers).forEach(([key, value]) => {
+                proxyReq.setHeader(key, value as string);
+            });
+        }
+    },
+    // 錯誤處理
+    onError: (err: any, req: any, res: any) => {
+        console.error('Proxy Error:', err);
+        res.status(500).send('Prometheus Proxy Error');
+    }
+};
+
+const prometheusProxy = createProxyMiddleware(proxyOptions);
+
+// 代理 Prometheus UI 相關路徑
+// 注意：放在自定義 API 之後，避免衝突
+app.use(['/graph', '/classic', '/static', '/new', '/api/v1', '/favicon.ico', '/lib'], prometheusProxy);
 
 // 執行 PromQL 查詢代理
 app.post('/api/query', async (req, res) => {

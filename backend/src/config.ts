@@ -42,6 +42,22 @@ export const config = {
         },
     },
 
+    // Kibana 設定
+    kibana: {
+        url: process.env.KIBANA_URL || 'http://localhost:5601',
+        headers: (() => {
+            if (process.env.KIBANA_HEADERS) {
+                try {
+                    // 嘗試解析 JSON 格式的 Headers
+                    return JSON.parse(process.env.KIBANA_HEADERS);
+                } catch (e) {
+                    console.warn('KIBANA_HEADERS JSON 解析失敗，將忽略此設定');
+                }
+            }
+            return undefined;
+        })(),
+    },
+
     // 伺服器設定
     server: {
         port: parseInt(process.env.PORT || '3001', 10),

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>整合監控儀表板 (Prometheus + Kibana)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #2b2b2b;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .split {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            flex-grow: 1;
+        }
+
+        .gutter {
+            background-color: #444;
+            background-repeat: no-repeat;
+            background-position: 50%;
+            cursor: col-resize;
+            transition: background-color 0.2s;
+        }
+
+        .gutter:hover {
+            background-color: #007acc;
+        }
+
+        .toolbar {
+            height: 30px;
+            background-color: #333;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 12px;
+            border-bottom: 1px solid #444;
+            justify-content: space-between;
+        }
+
+        .toolbar-title {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #46a758;
+            /* Green */
+        }
+
+        .btn {
+            background: none;
+            border: 1px solid #555;
+            color: #ccc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: #444;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="left-pane" class="split">
+            <div class="toolbar">
+                <div class="toolbar-title">
+                    <span class="status-dot"></span> Prometheus (Metrics)
+                </div>
+                <a href="/graph" target="_blank" class="btn">開啟原視窗 ↗</a>
+            </div>
+            <iframe src="/graph" title="Prometheus"></iframe>
+        </div>
+
+        <div id="right-pane" class="split">
+            <div class="toolbar">
+                <div class="toolbar-title">
+                    <span class="status-dot" style="background-color: #f077c5;"></span> Kibana (Logs)
+                </div>
+                <a href="/kibana" target="_blank" class="btn">開啟原視窗 ↗</a>
+            </div>
+            <iframe src="/kibana" title="Kibana"></iframe>
+        </div>
+    </div>
+
+    <script>
+        Split(['#left-pane', '#right-pane'], {
+            sizes: [50, 50],
+            minSize: 200,
+            gutterSize: 6,
+            cursor: 'col-resize',
+            onDragEnd: function (sizes) {
+                // Optional: Save layout preference
+                localStorage.setItem('split-sizes', JSON.stringify(sizes));
+            }
+        });
+
+        // Restore layout
+        const savedSizes = localStorage.getItem('split-sizes');
+        if (savedSizes) {
+            // Simple restoration logic if needed, split.js handles init pretty well though
+        }
+    </script>
+
+</body>
+
+</html>

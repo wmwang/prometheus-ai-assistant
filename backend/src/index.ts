@@ -20,38 +20,130 @@ const app = express();
 
 // 中介軟體
 app.use(cors());
-app.use(express.json());
+// app.use(express.json()); // Removed to support Proxy POST requests
+
+
 
 // ==========================================
 // Prometheus 反向代理 (解決 iframe 認證問題)
 // ==========================================
-const proxyOptions: any = {
-    target: config.prometheus.url,
-    changeOrigin: true,
-    ws: true, // 支援 WebSocket
-    // http-proxy-middleware v3.x 事件處理寫法
-    on: {
-        // 自動注入認證 Headers
-        proxyReq: (proxyReq: any, req: any, res: any) => {
-            // [Debug] 顯示正在轉發的請求
-            console.log(`[Proxy] Forwarding ${req.method} ${req.url} -> ${config.prometheus.url}`);
+function createPromProxy(label: string) {
+    return createProxyMiddleware({
+        target: config.prometheus.url,
+        changeOrigin: true,
+        ws: true, // 支援 WebSocket
+        on: {
+            proxyReq: (proxyReq: any, req: any, res: any) => {
+                // [Debug] 顯示正在轉發的請求
+                console.log(`[${label}] Forwarding ${req.method} ${req.url} -> ${config.prometheus.url}`);
 
-            if (config.prometheus.headers) {
-                console.log('[Proxy] Injecting Headers:', JSON.stringify(config.prometheus.headers));
-                Object.entries(config.prometheus.headers).forEach(([key, value]) => {
+                if (config.prometheus.headers) {
+                    // 為了版面整潔，不再每次印 Headers
+                    // console.log('[Proxy] Injecting Headers:', JSON.stringify(config.prometheus.headers));
+                    Object.entries(config.prometheus.headers).forEach(([key, value]) => {
+                        proxyReq.setHeader(key, value as string);
+                    });
+                }
+            },
+            error: (err: any, req: any, res: any) => {
+                console.error(`${label} Error:`, err);
+                res.status(500).send('Prometheus Proxy Error');
+            }
+        }
+    });
+}
+
+// 區分不同用途的 Proxy 以便 Debug
+const prometheusApiProxy = createPromProxy('Prometheus API');
+const prometheusCatchAllProxy = createPromProxy('Prometheus Catch-All');
+
+// ==========================================
+// Kibana 反向代理
+// ==========================================
+const kibanaProxyOptions: any = {
+    target: config.kibana.url,
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: {
+        '^/kibana': '', // 去除 /kibana 前綴
+    },
+    on: {
+        proxyReq: (proxyReq: any, req: any, res: any) => {
+            console.log(`[Kibana Proxy] Forwarding ${req.method} ${req.url} -> ${config.kibana.url}`);
+            if (config.kibana.headers) {
+                Object.entries(config.kibana.headers).forEach(([key, value]) => {
                     proxyReq.setHeader(key, value as string);
                 });
             }
         },
-        // 錯誤處理
+        // proxyRes: (proxyRes: any, req: any, res: any) => {
+        //     console.log(`[Kibana Response] ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`);
+        // },
         error: (err: any, req: any, res: any) => {
-            console.error('Proxy Error:', err);
-            res.status(500).send('Prometheus Proxy Error');
+            console.error('Kibana Proxy Error:', err);
+            res.status(500).send('Kibana Proxy Error');
         }
     }
 };
 
-const prometheusProxy = createProxyMiddleware(proxyOptions);
+const kibanaProxy = createProxyMiddleware(kibanaProxyOptions);
+
+// Kibana 路徑規則
+// 注意：我們不能直接用 app.use(['/spaces', ...], proxy)，因為 Express 會把匹配的路徑前綴移除
+// 導致 Kibana 收到錯誤的路徑 (例如 /spaces/enter 變成 /enter -> 404)
+// 所以我們必須自定義 Middleware 來手動匹配，保留原始路徑
+const kibanaPaths = [
+    '/kibana',
+    '/spaces',
+    '/app',
+    '/ui',
+    '/bundles',
+    '/translations',
+    '/built_assets',
+    '/node_modules',
+    '/api',           // Kibana API (注意：Prometheus API 已在上方排除)
+    '/s',             // Spaces URL 簡寫
+    '/goto',          // Short URLs
+    '/bootstrap.js',  // Kibana 啟動腳本
+    '/internal',      // Kibana 內部 API
+    '/core',          // Kibana Core Bundles
+    '/plugins',       // Kibana Plugins
+    '/login',         // 登入頁面
+    '/logout',        // 登出
+    '/oauth',         // OAuth 相關
+    '/notifications'  // Kibana 通知系統
+];
+
+// Kibana 動態路徑規則 (Regex)
+const kibanaRegex = [
+    /^\/\d+\//,       // 匹配版本號路徑，例如 /68203/bundles/...
+];
+
+// 中央路由邏輯 (解決路徑衝突與 Express Path Stripping 問題)
+app.use((req, res, next) => {
+    const path = req.path;
+
+    // [Debug] 用於排查路徑匹配
+    // console.log(`[Router] Checking Path: ${path}`);
+
+    // 2. Prometheus API (標準 /api/v1)
+    if (path.startsWith('/api/v1')) {
+        // 注意：這裡直接呼叫 Proxy，不會像 app.use('/api/v1', ...) 那樣切掉前綴
+        // 所以 Prometheus 收到的會是完整的 /api/v1/... (這才是對的)
+        return prometheusApiProxy(req, res, next);
+    }
+
+    // 3. Kibana 一般路徑
+    const isKibanaPath = kibanaPaths.some(p => path.startsWith(p)) ||
+        kibanaRegex.some(r => r.test(path));
+
+    if (isKibanaPath) {
+        return kibanaProxy(req, res, next);
+    }
+
+    // 4. Fallthrough -> 交給後面的 Prometheus Catch-All
+    next();
+});
 
 // 代理 Prometheus UI 相關路徑 - 改用底部 Catch-All 處理
 // app.use(['/graph', ...], prometheusProxy); 移除此行
@@ -77,6 +169,7 @@ app.get('/health', async (_req, res) => {
 });
 
 // API 路由
+app.use(express.json()); // 解析 JSON Body for Internal APIs
 app.use('/api/promql', promqlRouter);
 app.use('/api/insights', insightsRouter);
 app.use('/api/autocomplete', autocompleteRouter);
@@ -147,7 +240,7 @@ app.get('/api/metrics', async (_req, res) => {
 
 // 全域 Catch-All Proxy: 所有未被處理的請求都轉送給 Prometheus
 // 這能確保 /graph, /query, /assets 等所有 UI 資源都能正確載入
-app.use(prometheusProxy);
+app.use(prometheusCatchAllProxy);
 
 // 啟動伺服器
 app.listen(config.server.port, () => {

@@ -60,6 +60,42 @@ export interface InsightsResult {
 }
 
 /**
+ * 內部使用的串流請求輔助函數
+ * 模擬非串流行為：接收所有串流並組合成完整字串
+ * 這是為了相容某些較不穩定的 LLM Gateway (如公司內部 LLM)，它們可能只支援 Stream 模式
+ */
+async function completeWithStream(
+    messages: any[],
+    temperature: number = 0
+): Promise<string> {
+    try {
+        const stream = await openai.chat.completions.create({
+            model: config.openai.model,
+            messages: messages,
+            temperature: temperature,
+            stream: true, // 強制使用串流
+        });
+
+        let fullContent = '';
+        for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content;
+            if (delta) {
+                fullContent += delta;
+            }
+        }
+
+        if (!fullContent) {
+            throw new Error('OpenAI 串流回應為空');
+        }
+
+        return fullContent;
+    } catch (error) {
+        console.error('串流請求失敗:', error);
+        throw error;
+    }
+}
+
+/**
  * 將自然語言轉換為 PromQL 查詢
  */
 export async function generatePromQL(
@@ -67,25 +103,19 @@ export async function generatePromQL(
     availableMetrics?: string[]
 ): Promise<PromQLResult> {
     try {
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: PROMQL_GENERATOR_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: PROMQL_GENERATOR_USER_PROMPT(naturalLanguage, availableMetrics),
-                },
-            ],
-            temperature: 0.3, // 較低的溫度以獲得更一致的輸出
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: PROMQL_GENERATOR_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: PROMQL_GENERATOR_USER_PROMPT(naturalLanguage, availableMetrics),
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        // 改用串流模式獲取完整回應
+        const content = await completeWithStream(messages, 0.3);
 
         // 嘗試解析 JSON，如果失敗則嘗試擷取 JSON 部分
         let jsonContent = content;
@@ -111,25 +141,18 @@ export async function analyzeInsights(
     timeRange?: string
 ): Promise<InsightsResult> {
     try {
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: INSIGHTS_ANALYZER_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: INSIGHTS_ANALYZER_USER_PROMPT(query, data, timeRange),
-                },
-            ],
-            temperature: 0.5,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: INSIGHTS_ANALYZER_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: INSIGHTS_ANALYZER_USER_PROMPT(query, data, timeRange),
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.5);
 
         // 嘗試解析 JSON，如果失敗則嘗試擷取 JSON 部分
         let jsonContent = content;
@@ -190,16 +213,7 @@ export async function generatePromQLWithHistory(
             content: PROMQL_GENERATOR_USER_PROMPT(naturalLanguage, availableMetrics),
         });
 
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages,
-            temperature: 0.3,
-        });
-
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.3);
 
         // 嘗試解析 JSON
         let jsonContent = content;
@@ -234,25 +248,18 @@ export async function generateAlertRule(
     severity?: 'info' | 'warning' | 'critical'
 ): Promise<AlertRule> {
     try {
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: ALERT_GENERATOR_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: ALERT_GENERATOR_USER_PROMPT(description, severity),
-                },
-            ],
-            temperature: 0.3,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: ALERT_GENERATOR_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: ALERT_GENERATOR_USER_PROMPT(description, severity),
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.3);
 
         // 嘗試解析 JSON
         let jsonContent = content;
@@ -325,27 +332,18 @@ export async function quickDiagnosis(
             .replace('{metricType}', metricType)
             .replace('{currentValue}', currentValue);
 
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: '你是一位 Prometheus 監控專家，專精於指標分析和故障診斷。請用繁體中文回答。',
-                },
-                {
-                    role: 'user',
-                    content: prompt,
-                },
-            ],
-            temperature: 0.5,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: '你是一位 Prometheus 監控專家，專精於指標分析和故障診斷。請用繁體中文回答。',
+            },
+            {
+                role: 'user',
+                content: prompt,
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
-
-        return content;
+        return await completeWithStream(messages, 0.5);
     } catch (error) {
         console.error('快速診斷時發生錯誤:', error);
         throw error;
@@ -374,25 +372,18 @@ export async function diagnosisChat(
                 .replace('{relatedData}', params.relatedData || '無');
         }
 
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: DIAGNOSIS_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: userPrompt,
-                },
-            ],
-            temperature: 0.4,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: DIAGNOSIS_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: userPrompt,
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.4);
 
         // 提取 JSON
         let jsonContent = content;
@@ -433,25 +424,18 @@ export async function generateQueryDSL(
     availableFields?: string[]
 ): Promise<{ queryDSL: any; explanation: string }> {
     try {
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: NL2QueryDSL_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: NL2QueryDSL_USER_PROMPT(userInput, availableFields),
-                },
-            ],
-            temperature: 0.3,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: NL2QueryDSL_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: NL2QueryDSL_USER_PROMPT(userInput, availableFields),
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.3);
 
         // 提取 JSON
         let jsonContent = content;
@@ -477,25 +461,18 @@ export async function generateQueryDSL(
  */
 export async function generateKQL(userInput: string): Promise<{ kql: string; explanation: string }> {
     try {
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: NL2KQL_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: NL2KQL_USER_PROMPT(userInput),
-                },
-            ],
-            temperature: 0.3,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: NL2KQL_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: NL2KQL_USER_PROMPT(userInput),
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.3);
 
         // KQL 通常是簡單字串，不需要 JSON 解析
         const kql = content.trim().replace(/^```.*\n|```$/g, '');
@@ -542,25 +519,18 @@ export async function diagnoseLog(
     context?: string
 ): Promise<LogDiagnosisResult> {
     try {
-        const response = await openai.chat.completions.create({
-            model: config.openai.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: LOG_DIAGNOSIS_SYSTEM_PROMPT,
-                },
-                {
-                    role: 'user',
-                    content: LOG_DIAGNOSIS_USER_PROMPT(logContent, context),
-                },
-            ],
-            temperature: 0.4,
-        });
+        const messages = [
+            {
+                role: 'system',
+                content: LOG_DIAGNOSIS_SYSTEM_PROMPT,
+            },
+            {
+                role: 'user',
+                content: LOG_DIAGNOSIS_USER_PROMPT(logContent, context),
+            },
+        ];
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            throw new Error('OpenAI 回應為空');
-        }
+        const content = await completeWithStream(messages, 0.4);
 
         // 提取 JSON
         let jsonContent = content;

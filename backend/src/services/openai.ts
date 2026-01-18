@@ -30,6 +30,7 @@ import {
 // 初始化 OpenAI 客戶端
 const openai = new OpenAI({
     apiKey: config.openai.apiKey,
+    baseURL: config.openai.baseUrl, // Core: Support for custom endpoints
 });
 
 // PromQL 生成結果介面
@@ -596,32 +597,6 @@ export async function* diagnoseLogStream(
     context?: string
 ): AsyncGenerator<string, void, unknown> {
     try {
-        // Mock stream for testing
-        const mockResponse = {
-            errorType: '測試錯誤',
-            severity: 'low',
-            summary: '這是一個測試診斷結果 (Mocked)',
-            possibleCauses: [
-                {
-                    cause: '測試原因',
-                    probability: 'high',
-                    explanation: '這是一個測試原因說明'
-                }
-            ],
-            remediation: { immediate: [], shortTerm: [], longTerm: [] },
-            relatedQueries: []
-        };
-
-        const jsonStr = JSON.stringify(mockResponse);
-        const chunkSize = 10;
-
-        for (let i = 0; i < jsonStr.length; i += chunkSize) {
-            yield jsonStr.slice(i, i + chunkSize);
-            await new Promise(resolve => setTimeout(resolve, 100)); // Simulate delay
-        }
-
-        /* 
-        // Real implementation (commented out)
         const stream = await openai.chat.completions.create({
             model: config.openai.model,
             messages: [
@@ -644,7 +619,6 @@ export async function* diagnoseLogStream(
                 yield content;
             }
         }
-        */
     } catch (error) {
         console.error('日誌診斷 (串流) 時發生錯誤:', error);
         throw error;

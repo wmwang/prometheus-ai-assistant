@@ -7,6 +7,7 @@ export const config = {
     openai: {
         apiKey: process.env.OPENAI_API_KEY || '',
         model: process.env.OPENAI_MODEL || 'gpt-4',
+        baseUrl: process.env.OPENAI_BASE_URL, // Optional: for custom LLM endpoints
     },
 
     // Prometheus 設定

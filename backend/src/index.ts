@@ -22,6 +22,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ==========================================
+// Prometheus 反向代理 (解決 iframe 認證問題)
+// ==========================================
+const proxyOptions: any = {
+    target: config.prometheus.url,
+    changeOrigin: true,
+    ws: true, // 支援 WebSocket
+    // 自動注入認證 Headers
+    onProxyReq: (proxyReq: any, req: any, res: any) => {
+        // console.log(`[Proxy] Forwarding request: ${req.method} ${req.url} -> ${config.prometheus.url}`);
+        if (config.prometheus.headers) {
+            Object.entries(config.prometheus.headers).forEach(([key, value]) => {
+                proxyReq.setHeader(key, value as string);
+            });
+        }
+    },
+    // 錯誤處理
+    onError: (err: any, req: any, res: any) => {
+        console.error('Proxy Error:', err);
+        res.status(500).send('Prometheus Proxy Error');
+    }
+};
+
+const prometheusProxy = createProxyMiddleware(proxyOptions);
+
+// 代理 Prometheus UI 相關路徑 - 改用底部 Catch-All 處理
+// app.use(['/graph', ...], prometheusProxy); 移除此行
+
 // 提供靜態檔案（獨立 Web 介面）
 // 使用 process.cwd() 確保從專案根目錄解析路徑
 app.use(express.static(path.join(process.cwd(), 'public')));
@@ -68,33 +96,6 @@ app.get('/api/metrics', async (_req, res) => {
     }
 });
 
-// Prometheus 反向代理 (解決 iframe 認證問題)
-// ==========================================
-const proxyOptions: any = {
-    target: config.prometheus.url,
-    changeOrigin: true,
-    ws: true, // 支援 WebSocket
-    // 自動注入認證 Headers
-    onProxyReq: (proxyReq: any, req: any, res: any) => {
-        if (config.prometheus.headers) {
-            Object.entries(config.prometheus.headers).forEach(([key, value]) => {
-                proxyReq.setHeader(key, value as string);
-            });
-        }
-    },
-    // 錯誤處理
-    onError: (err: any, req: any, res: any) => {
-        console.error('Proxy Error:', err);
-        res.status(500).send('Prometheus Proxy Error');
-    }
-};
-
-const prometheusProxy = createProxyMiddleware(proxyOptions);
-
-// 代理 Prometheus UI 相關路徑
-// 注意：放在自定義 API 之後，避免衝突
-app.use(['/graph', '/classic', '/static', '/new', '/api/v1', '/favicon.ico', '/lib'], prometheusProxy);
-
 // 執行 PromQL 查詢代理
 app.post('/api/query', async (req, res) => {
     try {
@@ -120,6 +121,27 @@ app.post('/api/query', async (req, res) => {
         });
     }
 });
+
+// 獲取可用指標列表
+app.get('/api/metrics', async (_req, res) => {
+    try {
+        const metrics = await prometheus.getMetrics();
+        res.json({
+            success: true,
+            count: metrics.length,
+            metrics: metrics,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error instanceof Error ? error.message : '獲取指標失敗',
+        });
+    }
+});
+
+// 全域 Catch-All Proxy: 所有未被處理的請求都轉送給 Prometheus
+// 這能確保 /graph, /query, /assets 等所有 UI 資源都能正確載入
+app.use(prometheusProxy);
 
 // 啟動伺服器
 app.listen(config.server.port, () => {

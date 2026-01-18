@@ -1,0 +1,1184 @@
+/* Prometheus AI 助手 - 獨立 Web 介面樣式 */
+
+:root {
+    --bg-primary: #0f0f1a;
+    --bg-secondary: #1a1a2e;
+    --bg-card: rgba(0, 0, 0, 0.3);
+    --accent: #e94560;
+    --accent-light: #ff6b6b;
+    --text-primary: #ffffff;
+    --text-secondary: #888888;
+    --text-muted: #666666;
+    --success: #4ade80;
+    --warning: #ffc107;
+    --error: #ff4d4d;
+    --info: #0096ff;
+    --border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    padding: 30px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 8px;
+    background: var(--bg-card);
+    border-radius: 12px;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.tab.active {
+    background: rgba(233, 69, 96, 0.2);
+    color: var(--accent);
+}
+
+/* Mode Content */
+.mode-content {
+    display: none;
+}
+
+.mode-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Input Section */
+.input-section {
+    margin-bottom: 20px;
+}
+
+.query-input,
+.alert-input {
+    width: 100%;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    resize: none;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.query-input:focus,
+.alert-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.query-input::placeholder,
+.alert-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-small:hover {
+    background: rgba(255, 77, 77, 0.2);
+    color: var(--error);
+}
+
+/* Severity Select */
+.severity-select {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.severity-select label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.severity {
+    flex: 1;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+/* Loading */
+.loading {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.loading.show {
+    display: flex;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(233, 69, 96, 0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error */
+.error {
+    display: none;
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    color: var(--error);
+    margin-bottom: 20px;
+}
+
+.error.show {
+    display: block;
+}
+
+/* Result Cards */
+.query-result,
+.alert-result {
+    display: none;
+}
+
+.query-result.show,
+.alert-result.show {
+    display: block;
+}
+
+.result-card,
+.alert-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.result-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.promql-code,
+.alert-expr {
+    display: block;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 16px;
+    border-radius: 10px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 14px;
+    color: var(--success);
+    word-break: break-all;
+    margin-bottom: 16px;
+}
+
+.result-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Explanation */
+.explanation-section {
+    margin-bottom: 20px;
+}
+
+.explanation-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Alert Mode */
+.alert-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.alert-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.alert-severity-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.severity-info {
+    background: rgba(0, 150, 255, 0.2);
+    color: var(--info);
+}
+
+.severity-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning);
+}
+
+.severity-critical {
+    background: rgba(255, 77, 77, 0.2);
+    color: var(--error);
+}
+
+.alert-explanation {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+.yaml-section {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.yaml-code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 16px;
+    border-radius: 10px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+/* Template Mode */
+.template-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.category-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.category-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.category-btn.active {
+    background: rgba(233, 69, 96, 0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.template-list {
+    display: grid;
+    gap: 12px;
+}
+
+.template-item {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.template-item:hover {
+    border-color: rgba(233, 69, 96, 0.3);
+    transform: translateY(-2px);
+}
+
+.template-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.template-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.template-category {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.template-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.template-promql {
+    display: block;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 11px;
+    color: var(--success);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* History */
+.history-section {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.history-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+.history-user {
+    color: var(--text-secondary);
+}
+
+.history-assistant code {
+    color: var(--success);
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 11px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.backend-status.connected {
+    color: var(--success);
+}
+
+.backend-status.disconnected {
+    color: var(--error);
+}
+
+.bookmarklet-hint {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+/* Insights */
+.insights-list {
+    display: grid;
+    gap: 10px;
+}
+
+.insight-card {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 14px;
+    border-radius: 10px;
+    border-left: 3px solid var(--info);
+}
+
+.insight-card.warning {
+    border-left-color: var(--warning);
+}
+
+.insight-card.critical {
+    border-left-color: var(--error);
+}
+
+.insight-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.insight-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .container {
+        padding: 16px;
+    }
+
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab {
+        flex: 1 1 30%;
+    }
+
+    .result-actions {
+        flex-direction: column;
+    }
+
+    .severity-select {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ==================== 診斷模式 ==================== */
+
+.diagnosis-input {
+    width: 100%;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    resize: none;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.diagnosis-input:focus {
+    outline: none;
+    border-color: var(--info);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.diagnosis-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* 常見問題 */
+.common-issues {
+    margin-bottom: 20px;
+}
+
+.issues-list {
+    display: grid;
+    gap: 10px;
+}
+
+.issue-item {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.issue-item:hover {
+    border-color: var(--info);
+    transform: translateY(-2px);
+}
+
+.issue-pattern {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.issue-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* 診斷結果 */
+.diagnosis-result {
+    display: none;
+}
+
+.diagnosis-result.show {
+    display: block;
+}
+
+.diagnosis-summary {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    border-left: 4px solid var(--info);
+}
+
+.diagnosis-text {
+    line-height: 1.8;
+    color: var(--text-primary);
+}
+
+.diagnosis-text p {
+    margin-bottom: 12px;
+}
+
+.diagnosis-text strong {
+    color: var(--accent);
+}
+
+.diagnosis-text code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+    color: var(--success);
+}
+
+.diagnosis-context {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.context-label {
+    color: var(--text-secondary);
+}
+
+.context-value {
+    color: var(--info);
+    font-weight: 500;
+}
+
+/* 診斷選項 */
+.diagnosis-options {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.diagnosis-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.diagnosis-option input[type="checkbox"] {
+    accent-color: var(--accent);
+}
+
+.diagnosis-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+/* 相關指標區塊 */
+.related-metrics-section {
+    margin-bottom: 20px;
+}
+
+.related-metrics-list {
+    display: grid;
+    gap: 8px;
+}
+
+.related-metric-item {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--info);
+}
+
+.related-metric-purpose {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.related-metric-promql {
+    display: block;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 12px;
+    color: var(--success);
+    word-break: break-all;
+}
+
+/* 深度分析區塊 */
+.possible-causes ul,
+.immediate-checks ul,
+.evidence ul,
+.remediation-immediate ul,
+.remediation-short ul,
+.remediation-long ul {
+    margin: 8px 0 16px 20px;
+    padding: 0;
+}
+
+.possible-causes li,
+.immediate-checks li,
+.evidence li,
+.remediation-immediate li,
+.remediation-short li,
+.remediation-long li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.cause-explanation {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.root-cause-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.confidence-badge {
+    padding: 4px 12px;
+    background: rgba(0, 150, 255, 0.2);
+    color: var(--info);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.remediation-immediate {
+    background: rgba(255, 77, 77, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.remediation-immediate code {
+    display: block;
+    margin-top: 6px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--success);
+}
+
+/* ==================== 日誌模式 ==================== */
+
+/* 日誌輸入 */
+.logs-input {
+    width: 100%;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    resize: none;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.logs-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.logs-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* 日誌選項 */
+.logs-options {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.logs-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.logs-option span {
+    white-space: nowrap;
+}
+
+.logs-index,
+.logs-query-language,
+.logs-time-range {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.logs-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+/* 生成的查詢語法 */
+.generated-query-section {
+    margin-bottom: 20px;
+}
+
+.query-language-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.query-language-badge.kql {
+    background: rgba(0, 150, 255, 0.2);
+    color: var(--info);
+}
+
+.query-language-badge.dsl {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.generated-query-code {
+    display: block;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 16px;
+    border-radius: 10px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+    color: var(--success);
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 日誌搜尋結果 */
+.logs-search-results {
+    margin-top: 20px;
+}
+
+.logs-count {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.logs-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.log-item {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.log-item:hover {
+    border-color: var(--accent);
+}
+
+.log-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.log-index {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.log-id {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.log-score {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.log-content {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.no-logs {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+/* 日誌診斷結果 */
+.logs-diagnosis-section {
+    margin-top: 20px;
+}
+
+.diagnosis-summary {
+    position: relative;
+}
+
+.severity-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.severity-badge.critical {
+    background: rgba(255, 77, 77, 0.2);
+    color: var(--error);
+}
+
+.severity-badge.high {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+}
+
+.severity-badge.medium {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning);
+}
+
+.severity-badge.low {
+    background: rgba(0, 150, 255, 0.2);
+    color: var(--info);
+}
+
+.diagnosis-summary h3 {
+    margin: 8px 0;
+    color: var(--text-primary);
+}
+
+.diagnosis-summary p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* 可能原因 */
+.possible-causes-section {
+    margin-top: 16px;
+}
+
+.possible-causes-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.cause-item {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 14px;
+    border-radius: 10px;
+    border-left: 3px solid var(--warning);
+}
+
+.cause-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.cause-header strong {
+    color: var(--text-primary);
+}
+
+.probability-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.probability-badge.high {
+    background: rgba(255, 77, 77, 0.2);
+    color: var(--error);
+}
+
+.probability-badge.medium {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning);
+}
+
+.probability-badge.low {
+    background: rgba(0, 150, 255, 0.2);
+    color: var(--info);
+}
+
+.cause-explanation {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* 修復建議 */
+.remediation-section {
+    margin-top: 16px;
+}
+
+.remediation-immediate,
+.remediation-short,
+.remediation-long {
+    margin-bottom: 16px;
+}
+
+.remediation-immediate strong {
+    color: var(--error);
+}
+
+.remediation-short strong {
+    color: var(--warning);
+}
+
+.remediation-long strong {
+    color: var(--info);
+}
+
+.remediation-immediate ul,
+.remediation-short ul,
+.remediation-long ul {
+    margin: 8px 0 0 20px;
+    padding: 0;
+}
+
+.remediation-immediate li,
+.remediation-short li,
+.remediation-long li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.remediation-immediate code,
+.remediation-short code,
+.remediation-long code {
+    display: block;
+    margin-top: 6px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--success);
+}
+
+/* 響應式設計 - 日誌模式 */
+@media (max-width: 600px) {
+    .logs-options {
+        flex-direction: column;
+    }
+
+    .logs-option {
+        width: 100%;
+    }
+
+    .logs-index,
+    .logs-query-language,
+    .logs-time-range {
+        flex: 1;
+        width: 100%;
+    }
+
+    .logs-buttons {
+        flex-direction: column;
+    }
+
+    .log-header {
+        flex-wrap: wrap;
+    }
+}

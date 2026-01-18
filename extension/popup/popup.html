@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prometheus AI Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">🤖</div>
+      <h1>Prometheus AI Assistant</h1>
+    </header>
+
+    <section class="status-section">
+      <h2>連線狀態</h2>
+      <div class="status-item">
+        <span class="status-label">後端服務</span>
+        <span id="backend-status" class="status-badge disconnected">檢查中...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Prometheus</span>
+        <span id="prometheus-status" class="status-badge disconnected">檢查中...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">OpenAI</span>
+        <span id="openai-status" class="status-badge disconnected">檢查中...</span>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h2>設定</h2>
+      <div class="input-group">
+        <label for="backend-url">後端 API 位址</label>
+        <input 
+          type="text" 
+          id="backend-url" 
+          placeholder="http://localhost:3001"
+          value="http://localhost:3001"
+        >
+      </div>
+      <button id="save-btn" class="btn btn-primary">儲存設定</button>
+    </section>
+
+    <section class="help-section">
+      <h2>使用說明</h2>
+      <ul>
+        <li>開啟 Prometheus 查詢頁面</li>
+        <li>點擊右下角的 AI 助手按鈕</li>
+        <li>輸入自然語言查詢</li>
+        <li>獲取 PromQL 與見解分析</li>
+      </ul>
+    </section>
+
+    <footer class="footer">
+      <span>v1.0.0</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Prometheus AI 整合介面</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --accent: #e94560;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #4ade80;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 頂部工具列 */
+        .toolbar {
+            height: 48px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .toolbar-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .toolbar-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        .toolbar-btn.active {
+            background: rgba(233, 69, 96, 0.2);
+            color: var(--accent);
+        }
+
+        /* 主要內容區 */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 48px);
+        }
+
+        /* Prometheus iframe 容器 */
+        .prometheus-container {
+            flex: 1;
+            position: relative;
+            background: #fff;
+        }
+
+        .prometheus-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .prometheus-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .prometheus-error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--accent);
+            padding: 40px;
+        }
+
+        /* AI 助手側邊欄 */
+        .assistant-sidebar {
+            width: 420px;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s;
+        }
+
+        .assistant-sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+        }
+
+        .assistant-sidebar.expanded {
+            width: 600px;
+        }
+
+        /* 側邊欄 Header */
+        .sidebar-header {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sidebar-btn {
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+        }
+
+        /* 側邊欄內容 - 嵌入助手頁面 */
+        .sidebar-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* 佈局切換 */
+        .layout-horizontal .main-container {
+            flex-direction: column;
+        }
+
+        .layout-horizontal .prometheus-container {
+            flex: 1;
+        }
+
+        .layout-horizontal .assistant-sidebar {
+            width: 100%;
+            height: 350px;
+            border-left: none;
+            border-top: 1px solid var(--border);
+        }
+
+        .layout-horizontal .assistant-sidebar.expanded {
+            height: 500px;
+            width: 100%;
+        }
+
+        /* 連線狀態指示器 */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        .status-dot.error {
+            background: var(--accent);
+        }
+
+        /* 響應式 */
+        @media (max-width: 900px) {
+            .assistant-sidebar {
+                width: 320px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toolbar">
+        <div class="toolbar-title">
+            <span>🤖 Prometheus AI 整合介面</span>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">連線中...</span>
+            </div>
+        </div>
+        <div class="toolbar-actions">
+            <button class="toolbar-btn" id="layoutBtn" title="切換佈局">⊞ 切換佈局</button>
+            <button class="toolbar-btn active" id="toggleBtn" title="顯示/隱藏 AI 助手">🤖 AI 助手</button>
+            <button class="toolbar-btn" id="refreshBtn" title="重新整理 Prometheus">🔄 重新整理</button>
+        </div>
+    </div>
+
+    <div class="main-container" id="mainContainer">
+        <!-- Prometheus UI iframe -->
+        <div class="prometheus-container" id="prometheusContainer">
+            <div class="prometheus-loading" id="prometheusLoading">
+                <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                <div>正在載入 Prometheus UI...</div>
+            </div>
+            <iframe id="prometheusFrame" style="display: none;"></iframe>
+        </div>
+
+        <!-- AI 助手側邊欄 -->
+        <div class="assistant-sidebar" id="assistantSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">🤖 AI 助手</div>
+                <div class="sidebar-controls">
+                    <button class="sidebar-btn" id="expandBtn" title="放大">⤢</button>
+                    <button class="sidebar-btn" id="minimizeBtn" title="縮小">−</button>
+                </div>
+            </div>
+            <div class="sidebar-content">
+                <iframe id="assistantFrame" src="/"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 設定
+        const PROMETHEUS_URL = 'http://localhost:9090';
+
+        // DOM 元素
+        const prometheusFrame = document.getElementById('prometheusFrame');
+        const prometheusLoading = document.getElementById('prometheusLoading');
+        const assistantSidebar = document.getElementById('assistantSidebar');
+        const mainContainer = document.getElementById('mainContainer');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        // 狀態
+        let isHorizontal = false;
+        let isExpanded = false;
+        let isCollapsed = false;
+
+        // 初始化
+        async function init() {
+            await checkPrometheusStatus();
+            loadPrometheusUI();
+            bindEvents();
+        }
+
+        // 檢查 Prometheus 連線狀態
+        async function checkPrometheusStatus() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+
+                if (data.services?.prometheus === 'connected') {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Prometheus 已連線';
+                } else {
+                    statusDot.classList.add('error');
+                    statusText.textContent = 'Prometheus 未連線';
+                }
+            } catch (error) {
+                statusDot.classList.add('error');
+                statusText.textContent = '連線失敗';
+            }
+        }
+
+        // 載入 Prometheus UI
+        function loadPrometheusUI() {
+            prometheusFrame.src = PROMETHEUS_URL + '/graph';
+
+            prometheusFrame.onload = () => {
+                prometheusLoading.style.display = 'none';
+                prometheusFrame.style.display = 'block';
+            };
+
+            prometheusFrame.onerror = () => {
+                prometheusLoading.innerHTML = `
+                    <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                    <div>無法載入 Prometheus UI</div>
+                    <div style="font-size: 12px; margin-top: 8px; color: #666;">
+                        請確認 Prometheus 正在 ${PROMETHEUS_URL} 運行
+                    </div>
+                `;
+            };
+
+            // 處理跨域限制的情況
+            setTimeout(() => {
+                if (prometheusFrame.style.display === 'none') {
+                    prometheusLoading.innerHTML = `
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+                        <div>Prometheus UI 載入中...</div>
+                        <div style="font-size: 12px; margin-top: 8px; color: #666;">
+                            如果長時間未載入，請在新分頁開啟：
+                            <a href="${PROMETHEUS_URL}" target="_blank" style="color: #e94560;">${PROMETHEUS_URL}</a>
+                        </div>
+                    `;
+                }
+            }, 5000);
+        }
+
+        // 綁定事件
+        function bindEvents() {
+            // 切換佈局
+            document.getElementById('layoutBtn').addEventListener('click', () => {
+                isHorizontal = !isHorizontal;
+                document.body.classList.toggle('layout-horizontal', isHorizontal);
+            });
+
+            // 顯示/隱藏 AI 助手
+            document.getElementById('toggleBtn').addEventListener('click', (e) => {
+                isCollapsed = !isCollapsed;
+                assistantSidebar.classList.toggle('collapsed', isCollapsed);
+                e.target.classList.toggle('active', !isCollapsed);
+            });
+
+            // 放大助手
+            document.getElementById('expandBtn').addEventListener('click', () => {
+                isExpanded = !isExpanded;
+                assistantSidebar.classList.toggle('expanded', isExpanded);
+            });
+
+            // 縮小助手
+            document.getElementById('minimizeBtn').addEventListener('click', () => {
+                isCollapsed = true;
+                assistantSidebar.classList.add('collapsed');
+                document.getElementById('toggleBtn').classList.remove('active');
+            });
+
+            // 重新整理 Prometheus
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                prometheusLoading.style.display = 'block';
+                prometheusFrame.style.display = 'none';
+                loadPrometheusUI();
+            });
+        }
+
+        // 啟動
+        init();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Prometheus AI 助手</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🤖 Prometheus AI 助手</h1>
+            <p class="subtitle">自然語言轉 PromQL • 告警規則生成 • 主動診斷</p>
+        </header>
+
+        <!-- 模式切換 Tab -->
+        <div class="tabs">
+            <button class="tab active" data-mode="query">📊 查詢</button>
+            <button class="tab" data-mode="diagnosis">🔍 診斷</button>
+            <button class="tab" data-mode="logs">📋 日誌</button>
+            <button class="tab" data-mode="alert">🔔 告警</button>
+            <button class="tab" data-mode="template">📋 模板</button>
+        </div>
+
+        <main class="main-content">
+            <!-- 查詢模式 -->
+            <section class="mode-content query-mode active">
+                <!-- 對話歷史 -->
+                <div class="history-section" style="display: none;">
+                    <div class="history-header">
+                        <span>💬 對話歷史</span>
+                        <button class="btn-small clear-history">🗑️ 清除</button>
+                    </div>
+                    <div class="history-list"></div>
+                </div>
+
+                <div class="input-section">
+                    <textarea class="query-input"
+                        placeholder="用自然語言描述你想查詢的內容...&#10;例如：過去1小時哪些服務的錯誤率超過1%&#10;💡 支援上下文對話：可以說「那記憶體呢？」"
+                        rows="3"></textarea>
+                    <button class="btn-primary submit-query">生成 PromQL →</button>
+                </div>
+
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>AI 正在思考...</span>
+                </div>
+
+                <div class="error"></div>
+
+                <div class="query-result">
+                    <div class="result-card">
+                        <div class="result-label">生成的 PromQL</div>
+                        <code class="promql-code"></code>
+                        <div class="result-actions">
+                            <button class="btn-primary copy-promql">📋 複製 PromQL</button>
+                            <button class="btn-secondary analyze-btn">💡 分析見解</button>
+                            <button class="btn-secondary diagnose-btn">🔍 診斷</button>
+                        </div>
+                    </div>
+
+                    <div class="explanation-section">
+                        <div class="result-label">說明</div>
+                        <p class="explanation-text"></p>
+                    </div>
+
+                    <div class="insights-section" style="display: none;">
+                        <div class="result-label">見解分析</div>
+                        <div class="insights-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 診斷模式 -->
+            <section class="mode-content diagnosis-mode">
+                <div class="input-section">
+                    <textarea class="diagnosis-input"
+                        placeholder="輸入異常的 PromQL 或指標名稱...&#10;例如：rate(http_requests_total{status=~'5..'}[5m])&#10;或者：up"
+                        rows="3"></textarea>
+                    <div class="diagnosis-options">
+                        <label class="diagnosis-option">
+                            <input type="checkbox" class="include-related" checked>
+                            <span>自動查詢相關指標</span>
+                        </label>
+                    </div>
+                    <div class="diagnosis-buttons">
+                        <button class="btn-primary submit-diagnosis">🔍 快速診斷</button>
+                        <button class="btn-secondary submit-deep-diagnosis">🔬 深度分析</button>
+                    </div>
+                </div>
+
+                <div class="common-issues">
+                    <div class="result-label">常見問題模式</div>
+                    <div class="issues-list"></div>
+                </div>
+
+                <div class="loading diagnosis-loading">
+                    <div class="spinner"></div>
+                    <span class="diagnosis-loading-text">AI 正在分析...</span>
+                </div>
+
+                <div class="error diagnosis-error"></div>
+
+                <div class="diagnosis-result">
+                    <!-- 相關指標區塊 -->
+                    <div class="related-metrics-section" style="display: none;">
+                        <div class="result-label">📊 已查詢的相關指標</div>
+                        <div class="related-metrics-list"></div>
+                    </div>
+
+                    <div class="result-card diagnosis-summary">
+                        <div class="result-label">🔍 診斷結果</div>
+                        <div class="diagnosis-content"></div>
+                    </div>
+
+                    <!-- 深度分析區塊 -->
+                    <div class="deep-analysis-section" style="display: none;">
+                        <div class="result-card">
+                            <div class="result-label">🎯 根因分析</div>
+                            <div class="root-cause-content"></div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">🛠️ 修復建議</div>
+                            <div class="remediation-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 日誌模式 -->
+            <section class="mode-content logs-mode">
+                <div class="input-section">
+                    <textarea class="logs-input"
+                        placeholder="用自然語言描述你想查詢的日誌...&#10;例如：過去 1 小時內包含 ERROR 的日誌&#10;或者：status:500 AND message:'timeout'"
+                        rows="3"></textarea>
+
+                    <div class="logs-options">
+                        <label class="logs-option">
+                            <span>索引：</span>
+                            <select class="logs-index">
+                                <option value="">載入中...</option>
+                            </select>
+                        </label>
+                        <label class="logs-option">
+                            <span>查詢語法：</span>
+                            <select class="logs-query-language">
+                                <option value="nl">自然語言</option>
+                                <option value="kql">KQL</option>
+                                <option value="dsl">Query DSL</option>
+                            </select>
+                        </label>
+                        <label class="logs-option">
+                            <span>時間範圍：</span>
+                            <select class="logs-time-range">
+                                <option value="15m">過去 15 分鐘</option>
+                                <option value="1h" selected>過去 1 小時</option>
+                                <option value="24h">過去 24 小時</option>
+                                <option value="7d">過去 7 天</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="logs-buttons">
+                        <button class="btn-primary submit-logs-query">🔍 搜尋日誌</button>
+                        <button class="btn-secondary submit-logs-diagnosis">🔬 診斷日誌</button>
+                    </div>
+                </div>
+
+                <div class="loading logs-loading">
+                    <div class="spinner"></div>
+                    <span class="logs-loading-text">AI 正在分析...</span>
+                </div>
+
+                <div class="error logs-error"></div>
+
+                <div class="logs-result">
+                    <!-- 生成的查詢語法 -->
+                    <div class="generated-query-section" style="display: none;">
+                        <div class="result-label">生成的查詢語法</div>
+                        <div class="result-card">
+                            <div class="query-language-badge"></div>
+                            <code class="generated-query-code"></code>
+                            <div class="result-actions">
+                                <button class="btn-primary copy-query">📋 複製查詢</button>
+                                <button class="btn-secondary execute-query">▶️ 執行查詢</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 日誌搜尋結果 -->
+                    <div class="logs-search-results" style="display: none;">
+                        <div class="result-label">搜尋結果 <span class="logs-count"></span></div>
+                        <div class="logs-list"></div>
+                    </div>
+
+                    <!-- 日誌診斷結果 -->
+                    <div class="logs-diagnosis-section" style="display: none;">
+                        <div class="result-card">
+                            <div class="result-label">🔍 診斷結果</div>
+                            <div class="logs-diagnosis-content"></div>
+                        </div>
+
+                        <!-- 可能原因 -->
+                        <div class="possible-causes-section" style="display: none;">
+                            <div class="result-label">🎯 可能原因</div>
+                            <div class="possible-causes-list"></div>
+                        </div>
+
+                        <!-- 修復建議 -->
+                        <div class="remediation-section" style="display: none;">
+                            <div class="result-card">
+                                <div class="result-label">🛠️ 修復建議</div>
+                                <div class="remediation-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 告警模式 -->
+            <section class="mode-content alert-mode">
+                <div class="input-section">
+                    <textarea class="alert-input" placeholder="描述你想建立的告警規則...&#10;例如：當 CPU 使用率超過 80% 持續 5 分鐘時發出警告"
+                        rows="3"></textarea>
+                </div>
+
+                <div class="severity-select">
+                    <label>嚴重等級：</label>
+                    <select class="severity">
+                        <option value="">自動判斷</option>
+                        <option value="info">ℹ️ Info</option>
+                        <option value="warning">⚠️ Warning</option>
+                        <option value="critical">🚨 Critical</option>
+                    </select>
+                    <button class="btn-primary submit-alert">生成告警規則 →</button>
+                </div>
+
+                <div class="loading alert-loading">
+                    <div class="spinner"></div>
+                    <span>AI 正在生成告警規則...</span>
+                </div>
+
+                <div class="error alert-error"></div>
+
+                <div class="alert-result">
+                    <div class="alert-card">
+                        <div class="alert-header">
+                            <span class="alert-name"></span>
+                            <span class="alert-severity-badge"></span>
+                        </div>
+                        <code class="alert-expr"></code>
+                        <p class="alert-explanation"></p>
+                    </div>
+
+                    <div class="yaml-section">
+                        <div class="result-label">YAML 告警規則</div>
+                        <pre class="yaml-code"></pre>
+                        <button class="btn-primary copy-yaml">📋 複製 YAML</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 模板模式 -->
+            <section class="mode-content template-mode">
+                <div class="template-categories">
+                    <button class="category-btn active" data-category="">全部</button>
+                    <button class="category-btn" data-category="cpu">CPU</button>
+                    <button class="category-btn" data-category="memory">記憶體</button>
+                    <button class="category-btn" data-category="http">HTTP</button>
+                    <button class="category-btn" data-category="kubernetes">K8s</button>
+                    <button class="category-btn" data-category="disk">磁碟</button>
+                    <button class="category-btn" data-category="network">網路</button>
+                </div>
+                <div class="template-list"></div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>後端服務：<span class="backend-status">檢查中...</span></p>
+            <p class="bookmarklet-hint">💡 使用書籤小工具將助手嵌入任何頁面</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
